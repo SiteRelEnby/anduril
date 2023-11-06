@@ -46,6 +46,15 @@
 
 #ifdef HWDEF_H
 #include incfile(HWDEF_H)
+
+// Per-user global overrides
+#ifdef USER_DEFAULT_H
+#include incfile(USER_DEFAULT_H)
+#endif
+
+// Per-user model-specific overrides
+#ifdef USER_MODEL_H
+#include incfile(USER_MODEL_H)
 #endif
 
 /********* Include headers which need to be before FSM *********/
