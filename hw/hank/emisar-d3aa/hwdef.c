@@ -104,6 +104,7 @@ bool gradual_tick_main(uint8_t gt) {
 }
 
 
+#ifdef USE_VOLTAGE_DIVIDER
 uint8_t voltage_raw2cooked(uint16_t measurement) {
     // In : 65535 * BATTLVL / 1.024V
     // Out: uint8_t: Vbat * 40
@@ -115,4 +116,5 @@ uint8_t voltage_raw2cooked(uint16_t measurement) {
                      * 43 / 16128;
     return result;
 }
+#endif
 

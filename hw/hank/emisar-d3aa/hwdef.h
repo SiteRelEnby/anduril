@@ -97,17 +97,20 @@ enum CHANNEL_MODES {
 #define SWITCH_INTFLG   VPORTA.INTFLAGS
 #endif
 
-// TODO: define stuff for the voltage divider
-// AVR datasheet table 3.1 I/O Multiplexing, PA5 ADC0 = AIN25
-#define USE_VOLTAGE_DIVIDER    // use a dedicated pin, not VCC, because VCC input is regulated
-#define ADMUX_VOLTAGE_DIVIDER  ADC_MUXPOS_AIN25_gc
 #define DUAL_VOLTAGE_FLOOR     (4*21) // for AA/14500 boost drivers, don't indicate low voltage if below this level
 #define DUAL_VOLTAGE_LOW_LOW   (4*7)  // the lower voltage range's danger zone 0.7 volts (NiMH)
-// don't use the default VDD converter
-// convert BATT LVL pin readings to FSM volt units
-#undef voltage_raw2cooked
-uint8_t voltage_raw2cooked(uint16_t measurement);
-
+// comment out to use VDDIO2 instead of external voltage divider
+//#define USE_VOLTAGE_DIVIDER
+#ifdef USE_VOLTAGE_DIVIDER
+    // AVR datasheet table 3.1 I/O Multiplexing, PA5 ADC0 = AIN25
+    #define ADMUX_VOLTAGE_DIVIDER  ADC_MUXPOS_AIN25_gc
+    // don't use the default VDD converter
+    // convert BATT LVL pin readings to FSM volt units
+    #undef voltage_raw2cooked
+    uint8_t voltage_raw2cooked(uint16_t measurement);
+#else
+    #define USE_VOLTAGE_VDDIO2
+#endif
 
 // average drop across diode on this hardware
 #ifndef VOLTAGE_FUDGE_FACTOR
