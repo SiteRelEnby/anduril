@@ -113,7 +113,7 @@ uint8_t voltage_raw2cooked(uint16_t measurement) {
     // (plus a bit of fudging to fix the slope and offset,
     //  based on measuring actual hardware)
     uint8_t result = (uint32_t)(measurement + (65535 * 4 / 1024))
-                     * 43 / 16128;
+                     * 43 / 16000;
     return result;
 }
 #endif

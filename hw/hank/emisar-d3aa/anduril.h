@@ -6,8 +6,8 @@
 #define HWDEF_H hank/emisar-d3aa/hwdef.h
 
 // HPRsense : 4.2+0.3+20 = 24.5mR
-// Vsense=42.46mV, R1= 191k
-// LPRsense : 2R
+// Vsense=42.46mV, R1= 165k
+// LPRsense : 3R3
 // HDR ratio: 131.5
 // transition DAC level 20, ramp level 48
 // fifth power ramp 0.02mA to 2001mA
