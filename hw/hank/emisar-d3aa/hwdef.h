@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #pragma once
 
-/* 
+/*
  * NiMH/li-ion 9V2A boost driver based on MP3432
  * with high dynamic range and DAC control + front aux RGB and button LED
  *
@@ -26,7 +26,7 @@
  *  16   PF7    UPDI
  *  17   PA0    B: aux blue
  *  18   PA1    
- *  19   PA2    G: aux green 
+ *  19   PA2    G: aux green
  *  20   PA3    R: aux red
  *
  * BST EN enable the boost regulator and Op-Amp
@@ -36,7 +36,7 @@
  * IN- NFET : pull up after BST enable to eliminate startup flash, pull down otherwise
  * BATT LVL : Vbat * (100.0/(330+100))
  * VDDIO2 : can be connected to BATT+ with a solder jumper for VDDIO2 voltage sensing
- * 
+ *
  */
 
 #define HWDEF_C  hank/emisar-d3aa/hwdef.c
@@ -59,6 +59,7 @@ enum CHANNEL_MODES {
 #define CHANNEL_MODES_ENABLED 0b0000000000000001
 
 
+// DAC max is 1023, Anduril is written for 255, so regulate at 4X speed
 #undef  GRADUAL_ADJUST_SPEED
 #define GRADUAL_ADJUST_SPEED  4
 

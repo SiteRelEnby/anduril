@@ -84,17 +84,9 @@ bool gradual_tick_main(uint8_t gt) {
     PWM1_DATATYPE dac_now  = DAC_LVL >> 6;  // register is left-aligned
     PWM1_DATATYPE dac_next = PWM1_GET(gt);
 
-    // adjust multiple times based on how far until the next level
-    // (so it adjusts faster/coarser for big steps)
-
-    int16_t diff = (dac_next - dac_now);
-    if (diff < 0) diff = -diff;
-
-    // ~70 max DAC levels per ramp step, 1 + (70 >> 3) = max 10
-    uint8_t steps;
-    steps = 1 + (diff >> 3);
-    for (uint8_t i=0; i<=steps; i++)
-        GRADUAL_ADJUST_SIMPLE(dac_next, dac_now);
+    // only adjust 1 dac level, max is 1023
+    // (but speed it up with "#define GRADUAL_ADJUST_SPEED  4" elsewhere)
+    GRADUAL_ADJUST_SIMPLE(dac_next, dac_now);
 
     DAC_LVL = dac_now << 6;
 
