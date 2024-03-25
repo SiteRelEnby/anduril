@@ -225,8 +225,16 @@ void setup() {
 
         // regular e-switch light, no hard clicky power button
 
-        // blink at power-on to let user know power is connected
-        blink_once();
+        #ifdef USE_WEAK_BATTERY_PROTECTION
+            // try to measure the battery strength
+            // (must be done *before* factory reset,
+            //  because reset tries to use full power,
+            //  and a weak battery can't do that)
+            detect_weak_battery();
+        #else
+            // blink at power-on to let user know power is connected
+            blink_once();
+        #endif
 
         #ifdef USE_FACTORY_RESET
         if (button_is_pressed())

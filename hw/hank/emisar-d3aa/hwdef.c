@@ -4,6 +4,8 @@
 #pragma once
 
 #include "fsm/chan-rgbaux.c"
+#include "fsm/ramping.h"
+#include "ui/anduril/misc.h"
 
 void set_level_zero();
 
@@ -107,6 +109,68 @@ uint8_t voltage_raw2cooked(uint16_t measurement) {
     uint8_t result = (uint32_t)(measurement + (65535 * 4 / 1024))
                      * 43 / 16000;
     return result;
+}
+#endif
+
+#ifdef USE_WEAK_BATTERY_PROTECTION
+uint8_t quick_volt_measurement() {
+    // take the average of a few samples
+    // (assumes the ADC is in voltage mode and running continuously)
+    uint16_t total = 0;
+    for (uint8_t i=0; i<8; i++) {
+        uint16_t m = adc_raw[0];
+        total += voltage_raw2cooked(m);
+        delay_zero();
+    }
+    uint8_t v = total / 8;
+    return v;
+}
+
+void detect_weak_battery() {
+    // guess at the cell strength with a load test...
+    // - measure voltage while LEDs off
+    // - measure again with LEDs on
+    // - determine how much to limit power
+    // - blink to indicate weak battery mode, if active
+
+    uint16_t resting, loaded;
+
+    set_level(0);
+    resting = quick_volt_measurement();
+
+    set_level(WEAK_BATTERY_CHECK_LEVEL);
+    loaded = quick_volt_measurement();
+    set_level(0);
+
+    int16_t diff = resting - loaded;
+    uint8_t extra_blinks = 0;
+
+    if (loaded <= DUAL_VOLTAGE_LOW_LOW) {
+        // weak or empty AA battery has a low limit
+        ramp_level_hard_limit = WEAK_BATTERY_LOWEST_LIMIT;
+        extra_blinks = 2;
+    } else if (loaded >= VOLTAGE_RED) {
+        // reasonably strong li-ion battery
+        ramp_level_hard_limit = WEAK_BATTERY_HIGHEST_LIMIT;
+    } else if (diff <= (-5 * 4)) {
+        // marginal battery, dropped a lot under mild load
+        ramp_level_hard_limit = WEAK_BATTERY_MEDIUM_LIMIT;
+        extra_blinks = 1;
+    }
+
+    for (uint8_t i=0; i<extra_blinks; i++) {
+        delay_4ms(300/4);
+        blink_once();
+    }
+
+    voltage = resting;
+    battcheck();
+
+    voltage = loaded;
+    battcheck();
+
+    //if (diff < 0)
+    //    blink_num(-diff);
 }
 #endif
 
