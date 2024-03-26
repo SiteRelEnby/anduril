@@ -62,7 +62,7 @@ inline void set_level_aux_rgb_leds(uint8_t level) {
 
 void set_level(uint8_t level) {
     #ifdef USE_RAMP_LEVEL_HARD_LIMIT
-    if (level > ramp_level_hard_limit)
+    if (ramp_level_hard_limit && (level > ramp_level_hard_limit))
         level = ramp_level_hard_limit;
     #endif
 

@@ -114,16 +114,11 @@ uint8_t voltage_raw2cooked(uint16_t measurement) {
 
 #ifdef USE_WEAK_BATTERY_PROTECTION
 uint8_t quick_volt_measurement() {
-    // take the average of a few samples
-    // (assumes the ADC is in voltage mode and running continuously)
-    uint16_t total = 0;
-    for (uint8_t i=0; i<8; i++) {
-        uint16_t m = adc_raw[0];
-        total += voltage_raw2cooked(m);
-        delay_zero();
-    }
-    uint8_t v = total / 8;
-    return v;
+    // wait for next hardware measurement
+    irq_adc = 0;
+    while (! irq_adc) {}
+    uint16_t m = adc_raw[0];
+    return voltage_raw2cooked(m);
 }
 
 void detect_weak_battery() {
@@ -133,44 +128,65 @@ void detect_weak_battery() {
     // - determine how much to limit power
     // - blink to indicate weak battery mode, if active
 
+    ramp_level_hard_limit = 0;
+
     uint16_t resting, loaded;
 
+    // baseline unloaded measurement
     set_level(0);
+    for (uint8_t i=0; i<32; i++) { delay_zero(); }  // wait about 10ms
+    //resting = voltage_raw2cooked(adc_smooth[0]);  // probably not settled yet
     resting = quick_volt_measurement();
 
-    set_level(WEAK_BATTERY_CHECK_LEVEL);
-    loaded = quick_volt_measurement();
+    // progressively turn up the power until sag threshold is hit,
+    // or critical voltage, or max testing level is reached
+    for (uint8_t l=1; l<WEAK_BATTERY_TEST_MAX_LEVEL; l++) {
+        set_level(l);
+        loaded = quick_volt_measurement();
+        int16_t sag = resting - loaded;
+        if (
+            // AA/NiMH critical voltage
+            (loaded <= DUAL_VOLTAGE_LOW_LOW) ||
+            // weak battery chemistry, can't handle much power
+            (sag > WEAK_BATTERY_SAG_THRESHOLD) ||
+            // Li-ion critical voltage
+            ((resting > VOLTAGE_LOW) && (loaded < VOLTAGE_LOW))
+            ) {
+                ramp_level_hard_limit = l;
+                break;
+        }
+    }
     set_level(0);
 
-    int16_t diff = resting - loaded;
-    uint8_t extra_blinks = 0;
+    // TODO? limit NiMH to ~half power, even if it passed the sag test?
+    //       (and if so, blink 2X for NiMH, 3X for alkaline)
 
-    if (loaded <= DUAL_VOLTAGE_LOW_LOW) {
-        // weak or empty AA battery has a low limit
-        ramp_level_hard_limit = WEAK_BATTERY_LOWEST_LIMIT;
-        extra_blinks = 2;
-    } else if (loaded >= VOLTAGE_RED) {
-        // reasonably strong li-ion battery
-        ramp_level_hard_limit = WEAK_BATTERY_HIGHEST_LIMIT;
-    } else if (diff <= (-5 * 4)) {
-        // marginal battery, dropped a lot under mild load
-        ramp_level_hard_limit = WEAK_BATTERY_MEDIUM_LIMIT;
-        extra_blinks = 1;
-    }
+    uint8_t extra_blinks = 0;
+    if (ramp_level_hard_limit) extra_blinks ++;
 
     for (uint8_t i=0; i<extra_blinks; i++) {
         delay_4ms(300/4);
         blink_once();
     }
 
-    voltage = resting;
-    battcheck();
+    if (ramp_level_hard_limit) {
+        delay_4ms(255);
+        // not booted far enough for this to work yet
+        //blink_num(ramp_level_hard_limit);
+        uint8_t tens, ones;
+        tens = ramp_level_hard_limit / 10;
+        ones = ramp_level_hard_limit % 10;
+        for (uint8_t i=0; i<tens; i++) {
+            delay_4ms(300/4);
+            blink_once();
+        }
+        delay_4ms(600/4);
+        for (uint8_t i=0; i<ones; i++) {
+            delay_4ms(300/4);
+            blink_once();
+        }
+    }
 
-    voltage = loaded;
-    battcheck();
-
-    //if (diff < 0)
-    //    blink_num(-diff);
 }
-#endif
+#endif  // ifdef USE_WEAK_BATTERY_PROTECTION
 

@@ -116,12 +116,11 @@ enum CHANNEL_MODES {
 
 // Alkaline AA can't handle the power this light wants,
 // so try to detect it and limit the maximum power
+// (also helps protect firmware flashing adapters from overload)
 #define USE_RAMP_LEVEL_HARD_LIMIT
 #define USE_WEAK_BATTERY_PROTECTION
-#define WEAK_BATTERY_HIGHEST_LIMIT  RAMP_SIZE
-#define WEAK_BATTERY_MEDIUM_LIMIT   (RAMP_SIZE*2/3)
-#define WEAK_BATTERY_LOWEST_LIMIT   (RAMP_SIZE*1/3)
-#define WEAK_BATTERY_CHECK_LEVEL    (RAMP_SIZE*2/3)
+#define WEAK_BATTERY_TEST_MAX_LEVEL 75  // about 300 mA
+#define WEAK_BATTERY_SAG_THRESHOLD  (5*4)  // 0.5 V
 
 // average drop across diode on this hardware
 #ifndef VOLTAGE_FUDGE_FACTOR
