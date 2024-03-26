@@ -138,22 +138,26 @@ void detect_weak_battery() {
     //resting = voltage_raw2cooked(adc_smooth[0]);  // probably not settled yet
     resting = quick_volt_measurement();
 
+    // set thresholds per cell type
+    uint8_t sag_limit, crit_voltage;
+    if (resting > DUAL_VOLTAGE_FLOOR) {
+        sag_limit    = WEAK_BATTERY_SAG_THRESHOLD_LIION;
+        crit_voltage = VOLTAGE_LOW;
+    } else {
+        sag_limit    = WEAK_BATTERY_SAG_THRESHOLD_AA;
+        crit_voltage = DUAL_VOLTAGE_LOW_LOW;
+    }
+
     // progressively turn up the power until sag threshold is hit,
     // or critical voltage, or max testing level is reached
     for (uint8_t l=1; l<WEAK_BATTERY_TEST_MAX_LEVEL; l++) {
         set_level(l);
         loaded = quick_volt_measurement();
         int16_t sag = resting - loaded;
-        if (
-            // AA/NiMH critical voltage
-            (loaded <= DUAL_VOLTAGE_LOW_LOW) ||
-            // weak battery chemistry, can't handle much power
-            (sag > WEAK_BATTERY_SAG_THRESHOLD) ||
-            // Li-ion critical voltage
-            ((resting > VOLTAGE_LOW) && (loaded < VOLTAGE_LOW))
-            ) {
-                ramp_level_hard_limit = l;
-                break;
+        if ( (loaded <= crit_voltage) || (sag > sag_limit) ) {
+            // battery empty or weak
+            ramp_level_hard_limit = l;
+            break;
         }
     }
     set_level(0);
