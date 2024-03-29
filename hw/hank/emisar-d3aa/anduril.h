@@ -44,6 +44,10 @@
 #define HALFSPEED_LEVEL      41
 #define QUARTERSPEED_LEVEL   40  // seems to run fine at 10kHz/4, try reducing more?
 
+// should be about 300 mA or ~100 lm,
+// to avoid overloading firmware flashing adapters
+#define WEAK_BATTERY_TEST_MAX_LEVEL       75
+
 #define RAMP_SMOOTH_FLOOR    1
 #define RAMP_SMOOTH_CEIL     130  // 50% power
 // 10 30 [50] 70 90 110 130

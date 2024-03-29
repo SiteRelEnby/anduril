@@ -119,7 +119,8 @@ enum CHANNEL_MODES {
 // (also helps protect firmware flashing adapters from overload)
 #define USE_RAMP_LEVEL_HARD_LIMIT
 #define USE_WEAK_BATTERY_PROTECTION
-#define WEAK_BATTERY_TEST_MAX_LEVEL       75  // about 300 mA
+// define this next to the ramp table instead
+//#define WEAK_BATTERY_TEST_MAX_LEVEL       75  // about 300 mA
 #define WEAK_BATTERY_SAG_THRESHOLD_AA     (3*4)  // 0.3 V
 #define WEAK_BATTERY_SAG_THRESHOLD_LIION  (6*4)  // 0.6 V
 

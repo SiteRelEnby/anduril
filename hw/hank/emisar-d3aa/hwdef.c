@@ -123,9 +123,10 @@ uint8_t quick_volt_measurement() {
 
 void detect_weak_battery() {
     // guess at the cell strength with a load test...
-    // - measure voltage while LEDs off
+    // - measure voltage with LEDs off
     // - measure again with LEDs on
     // - determine how much to limit power
+    //   (ramp up until battery becomes unstable)
     // - blink to indicate weak battery mode, if active
 
     ramp_level_hard_limit = 0;
@@ -162,17 +163,23 @@ void detect_weak_battery() {
     }
     set_level(0);
 
-    // TODO? limit NiMH to ~half power, even if it passed the sag test?
-    //       (and if so, blink 2X for NiMH, 3X for alkaline)
+    // Blink again if not in full-power mode:
+    // - 1 blink total: Strong Li-ion cell, full power enabled
+    // - 2 blinks: Strong AA cell, max AA power enabled
+    //   (not used on this driver, strong AA uses mode 1)
+    // - 3 blinks: Weak battery, power severely limited
 
     uint8_t extra_blinks = 0;
-    if (ramp_level_hard_limit) extra_blinks ++;
+    if (ramp_level_hard_limit) extra_blinks += 2;
 
     for (uint8_t i=0; i<extra_blinks; i++) {
         delay_4ms(300/4);
         blink_once();
     }
 
+    #ifdef USE_WEAK_BATTERY_PROTECTION_READOUT
+    // this numeric display isn't really needed by default,
+    // but the code remains in case anyone wants to use it
     if (ramp_level_hard_limit) {
         delay_4ms(255);
         // not booted far enough for this to work yet
@@ -190,6 +197,7 @@ void detect_weak_battery() {
             blink_once();
         }
     }
+    #endif  // ifdef USE_WEAK_BATTERY_PROTECTION_READOUT
 
 }
 #endif  // ifdef USE_WEAK_BATTERY_PROTECTION
