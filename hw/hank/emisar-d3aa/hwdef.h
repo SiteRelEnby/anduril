@@ -98,8 +98,8 @@ enum CHANNEL_MODES {
 #define SWITCH_INTFLG   VPORTA.INTFLAGS
 #endif
 
-#define DUAL_VOLTAGE_FLOOR     (4*21) // for AA/14500 boost drivers, don't indicate low voltage if below this level
-#define DUAL_VOLTAGE_LOW_LOW   (4*7)  // the lower voltage range's danger zone 0.7 volts (NiMH)
+#define DUAL_VOLTAGE_FLOOR     (21*dV)  // for AA/14500 boost drivers, don't indicate low voltage if below this level
+#define DUAL_VOLTAGE_LOW_LOW   ( 7*dV)  // the lower voltage range's danger zone 0.7 volts (NiMH)
 // comment out to use VDDIO2 instead of external voltage divider
 #define USE_VOLTAGE_DIVIDER
 #ifdef USE_VOLTAGE_DIVIDER
