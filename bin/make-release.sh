@@ -18,9 +18,7 @@ cd "$REPODIR"
 #make
 
 # release name
-#REV=$(date +'%Y-%m-%d')
-REV=$(git describe --tags --dirty --match='r2*')
-REV="${REV:1}"  # convert 'r2023-...' to '2023-...'
+REV=$(bin/version-string.sh git)
 # allow manually specifying a release name
 [[ -n "$1" ]] && REV="$1"
 
