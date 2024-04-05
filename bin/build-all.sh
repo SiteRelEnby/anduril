@@ -9,8 +9,40 @@
 # enable "**" for recursive glob (requires bash)
 shopt -s globstar
 
-function main {
+if [ "${DEBUG}" == "1" ]; then
+  set -x
+  export DEBUG
+fi
 
+POSITIONAL=()
+for arg in "${@}"
+do
+    if [[ "${arg}" == "--user" ]]
+    then
+        shift # past arg
+        USER_CFG_DIRNAME="users/${1}"
+        echo "Loading user config from 'users/${1}'" >&2
+    elif [[ "${arg}" =~ --no-user ]]
+    then
+	unset USER_CFG_DIR USER_CFG_DIRNAME
+        export SKIP_USER_CFG=1
+    elif [[ "${arg}" == "--user-cfg" ]] || [[ "${arg}" == "--user-config" ]]
+    then
+        shift # past arg
+        export USER_CFG_DIR="${1}"
+    elif [[ "${arg}" == "--debug" ]]
+    then
+        set -x
+        export DEBUG=1
+    else
+        # Store var in a temporary array to restore after we've finished parsing for builder-specific args
+        POSITIONAL+=("$1")
+    fi
+    shift
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+function main {
     if [ "$#" -gt 0 ]; then
         # multiple search terms with "AND"
         SEARCH=( "$@" )
@@ -21,7 +53,7 @@ function main {
     # TODO: detect UI from $0 and/or $*
     UI=anduril
 
-    mkdir -p hex
+    [ ! -d hex/ ] && mkdir -p hex
 
     make-version-h  # generate a version.h file
 
@@ -30,11 +62,44 @@ function main {
     PASSED=''
     FAILED=''
 
+    # Get a default user config to use, if there is one and it isn't already overridden
+    if [ -f user.cfg ] && [ -z "${SKIP_USER_CFG}" ]
+    then
+        #TODO: Allow building user and base versions at the same time
+        USER_CFG_DIRNAME="$(<user.cfg)" && echo "Loaded default user config: ${USER_CFG_DIRNAME} from user.cfg. To skip user config, use --no-user" >&2
+        if [ -d "users/${USER_CFG_DIRNAME}" ]
+        then
+            export USER_CFG_DIR="users/${USER_CFG_DIRNAME}"
+        fi
+        unset USER_CFG_DIRNAME
+    fi
+
+    # load user global config, if any
+    if [ -d "${USER_CFG_DIR}" ]
+    then
+            export USER_CFG_DIR="users/${USER_NAME}"
+    fi
+
     # build targets are hw/$vendor/$model/**/$ui.h
     for TARGET in hw/*/*/**/"$UI".h ; do
 
         # friendly name for this build
         NAME=$(echo "$TARGET" | perl -ne 's|/|-|g; /hw-(.*)-'"$UI"'.h/ && print "$1\n";')
+
+        # Get a default user config to use, if there is one and it isn't already overridden
+        if [ -f user.cfg ] && [ -z "${SKIP_USER_CFG}" ]
+        then
+            export USER_CFG_DIRNAME="$(<user.cfg)"
+            if [ -d "users/${USER_CFG_DIRNAME}" ]
+            then
+                export USER_CFG_DIR="users/${USER_CFG_DIRNAME}"
+	        #echo "Loaded user config dir ${USER_CFG_DIR} from user.cfg" >&2
+            fi
+        fi
+
+        export USER_DEFAULT_CFG="${USER_CFG_DIR}/${UI}.h"
+        # TODO: allow multiple custom model builds per user
+        export USER_MODEL_CFG="${USER_CFG_DIR}/model/${NAME}/${UI}.h"
 
         # limit builds to searched patterns, if given
         SKIP=0
@@ -52,7 +117,13 @@ function main {
 
         # try to compile, track result, and rename compiled files
         if bin/build.sh "$TARGET" ; then
-            HEX_OUT="hex/$UI.$NAME.hex"
+            if [ ! -z "${USER_CFG_DIRNAME}" ]
+            then
+                HEX_USERPART="_${USER_CFG_DIRNAME}"
+            else
+                HEX_USERPART="" # noop
+            fi
+            HEX_OUT="hex/$UI.${NAME}${HEX_USERPART}.hex"
             mv -f "ui/$UI/$UI".hex "$HEX_OUT"
             MD5=$(md5sum "$HEX_OUT" | cut -d ' ' -f 1)
             echo "  # $MD5"

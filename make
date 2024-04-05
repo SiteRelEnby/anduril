@@ -10,6 +10,11 @@
 # enable "**" for recursive glob (requires bash)
 shopt -s globstar
 
+if [ "${DEBUG}" == "1" ]; then
+  set -x
+  export DEBUG
+fi
+
 # figure out which operation was requested
 MODE="$1"
 

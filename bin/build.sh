@@ -6,9 +6,14 @@
 # Instead of using a Makefile, since most of the firmwares here build in the
 # same exact way, here's a script to do the same thing
 
+if [ "${DEBUG}" == "1" ]; then
+  set -x
+  export DEBUG
+fi
+
 if [ 0 = "$#" ]; then
-  echo "Usage: build.sh TARGET"
-  echo "Example: build.sh hw/hank/emisar-d4/anduril.h"
+  echo "Usage: build.sh TARGET" >&2
+  echo "Example: build.sh hw/hank/emisar-d4/anduril.h" >&2
   exit
 fi
 
@@ -20,8 +25,8 @@ ARGS="$*"
 UI=$(basename "$TARGET" .h)
 MODEL=$(dirname "$TARGET")
 PROGRAM="ui/$UI/$UI"
-USER_MODEL_CFG=$(dirname ${TARGET//hw/users\/$USER} )/config.h
-USER_DEFAULT_CFG=users/$USER/config.h
+#USER_MODEL_CFG
+#USER_DEFAULT_CFG
 
 # figure out the model number
 MODEL_NUMBER=$(head -1 "$MODEL/model")
@@ -35,7 +40,7 @@ if [[ $MCUNAME =~ "attiny" ]]; then
 elif [[ $MCUNAME =~ "avr" && $MCUNAME =~ "dd" ]]; then
   DFPPATH=$BASEDIR/arch/dfp/avrdd
 else
-  echo "Unrecognized MCU type: '$MCUNAME'"
+  echo "Unrecognized MCU type: '$MCUNAME'" >&2
   exit 1
 fi
 # skip verification because newer avr-libc doesn't need DFPs,
@@ -62,13 +67,14 @@ export OBJS=$PROGRAM.o
 OTHERFLAGS="-DCFG_H=$TARGET -DMODEL_NUMBER=\"$MODEL_NUMBER\" $ARGS"
 
 if [ -f $USER_DEFAULT_CFG ]; then
-  echo "  Using custom configuration from $USER_DEFAULT_CFG"
-  OTHERFLAGS="$OTHERFLAGS -DUSER_DEFAULT_H=$USER_DEFAULT_CFG"
+  echo "  Using custom configuration from $USER_DEFAULT_CFG" >&2
+  OTHERFLAGS="$OTHERFLAGS -DUSER_DEFAULT_CFG=$USER_DEFAULT_CFG"
 fi
 
 if [ -f $USER_MODEL_CFG ]; then
-  echo "  Using custom configuration from $USER_MODEL_CFG"
-  OTHERFLAGS="$OTHERFLAGS -DUSER_MODEL_H=$USER_MODEL_CFG"
+  # TODO: allow multiple custom model builds per user
+  echo "  Using custom configuration from $USER_MODEL_CFG" >&2
+  OTHERFLAGS="$OTHERFLAGS -DUSER_MODEL_CFG=$USER_MODEL_CFG"
 fi
 
 function run () {
