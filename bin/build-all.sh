@@ -20,16 +20,19 @@ do
     if [[ "${arg}" == "--user" ]]
     then
         shift # past arg
-        USER_CFG_DIRNAME="users/${1}"
+        USER_CFG_DIRNAME="${1}"
+        USER_CFG_DIR="users/${1}"
+	USER_CFG=1
         echo "Loading user config from 'users/${1}'" >&2
     elif [[ "${arg}" =~ --no-user ]]
     then
-	unset USER_CFG_DIR USER_CFG_DIRNAME
+	unset USER_CONF USER_CFG_DIR USER_CFG_DIRNAME
         export SKIP_USER_CFG=1
     elif [[ "${arg}" == "--user-cfg" ]] || [[ "${arg}" == "--user-config" ]]
     then
         shift # past arg
         export USER_CFG_DIR="${1}"
+	USER_CFG=1
     elif [[ "${arg}" == "--debug" ]]
     then
         set -x
@@ -74,10 +77,16 @@ function main {
         unset USER_CFG_DIRNAME
     fi
 
-    # load user global config, if any
-    if [ -d "${USER_CFG_DIR}" ]
+    # load user global config, if any. Check directory users/username if --user was specified
+    if [ "$USER_CFG" == 1 ]
     then
+        if [ -d "${USER_CFG_DIR}" ]
+        then
             export USER_CFG_DIR="users/${USER_NAME}"
+        else
+	    echo "User config directory not found."
+	    exit;
+	fi
     fi
 
     # build targets are hw/$vendor/$model/**/$ui.h
