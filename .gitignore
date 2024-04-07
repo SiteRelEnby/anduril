@@ -18,4 +18,4 @@ venv/
 *.o
 *.old
 *.otl
-user.cfg
+users.cfg

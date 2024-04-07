@@ -66,14 +66,14 @@ export OBJS=$PROGRAM.o
 
 OTHERFLAGS="-DCFG_H=$TARGET -DMODEL_NUMBER=\"$MODEL_NUMBER\" $ARGS"
 
-if [ -f $USER_DEFAULT_CFG ]; then
-  echo "  Using custom configuration from $USER_DEFAULT_CFG" >&2
+if [ -n "${USER_DEFAULT_CFG}" ] && [ -f "$USER_DEFAULT_CFG" ]; then
+  echo "  Using custom user default (global) configuration from $USER_DEFAULT_CFG" >&2
   OTHERFLAGS="$OTHERFLAGS -DUSER_DEFAULT_CFG=$USER_DEFAULT_CFG"
 fi
 
-if [ -f $USER_MODEL_CFG ]; then
+if [ -n "${USER_MODEL_CFG}" ] && [ -f "$USER_MODEL_CFG" ]; then
   # TODO: allow multiple custom model builds per user
-  echo "  Using custom configuration from $USER_MODEL_CFG" >&2
+  echo "  Using custom user model configuration from $USER_MODEL_CFG" >&2
   OTHERFLAGS="$OTHERFLAGS -DUSER_MODEL_CFG=$USER_MODEL_CFG"
 fi
 
@@ -84,6 +84,7 @@ function run () {
 }
 
 run "$CPP" "$OTHERFLAGS" "$CPPFLAGS" -o foo.cpp "$PROGRAM.c"
+[ -n "${CPP_SAVE}" ] && cp -f foo.cpp "$CPP_SAVE"
 grep -a -E -v '^#|^$' foo.cpp > "$PROGRAM.cpp" ; rm foo.cpp
 run "$CC" "$OTHERFLAGS" "$CFLAGS" -o "$PROGRAM.o" -c "$PROGRAM.c"
 run "$CC" "$OFLAGS" "$LDFLAGS" -o "$PROGRAM.elf" "$PROGRAM.o"

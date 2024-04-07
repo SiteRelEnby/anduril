@@ -14,36 +14,151 @@ if [ "${DEBUG}" == "1" ]; then
   export DEBUG
 fi
 
+USER_CONFIGS=()
 POSITIONAL=()
-for arg in "${@}"
+while [ "${#}" -gt "0" ]
 do
-    if [[ "${arg}" == "--user" ]]
+    [ "${DEBUG}" == "1" ] && echo "parsing arg: ${1}"
+
+    if [[ "${1}" =~ "--user" ]]
     then
-        shift # past arg
-        USER_CFG_DIRNAME="${1}"
-        USER_CFG_DIR="users/${1}"
-	USER_CFG=1
-        echo "Loading user config from 'users/${1}'" >&2
-    elif [[ "${arg}" =~ --no-user ]]
+        # load user config
+
+        # using --foo=bar instead of --foo bar
+        if [[ "${1}" =~ "--user=" ]]
+        then
+            #extract the actual arg part
+            arg=$(cut -d= -f2- <<< "${1}")
+        else
+            shift # past arg
+            # save the arg value
+            arg="${1}"
+        fi
+        if [[ -n "${arg}" ]]
+        then
+            if [ -d "users/${arg}" ]
+            then
+                echo "Loading user config from 'users/${arg}'" >&2
+                USER_CONFIGS+=("${1}") # store user in an array to support multiple users
+            else
+                echo "ERROR: directory 'users/${arg}' not found" >&2
+                exit 1
+            fi
+        else
+            # e.g. --user= or --user on the end of the cmdline with no arg
+            echo "ERROR: --user needs an arg" >&2
+            exit 1
+        fi
+    elif [[ "${1}" =~ --no-user ]]
     then
-	unset USER_CONF USER_CFG_DIR USER_CFG_DIRNAME
-        export SKIP_USER_CFG=1
-    elif [[ "${arg}" == "--user-cfg" ]] || [[ "${arg}" == "--user-config" ]]
-    then
-        shift # past arg
-        export USER_CFG_DIR="${1}"
-	USER_CFG=1
-    elif [[ "${arg}" == "--debug" ]]
+        # clear all user configs (may be re-instantiated later e.g. --no-user --user foo)
+	unset USER_CONF USER_CFG_DIR USER_CFG_DIRNAME USER_CONFIGS
+        export SKIP_USER_CFG_AUTOLOAD=1 # TODO: remove?
+    elif [[ "${1}" == "--debug" ]]
     then
         set -x
-        export DEBUG=1
+        export DEBUG=1 # cascade to downstream scripts
+    elif [[ "${1}" == "--save-cpp" ]]
+    then
+        # save the rendered .cpp, e.g. for preprocessor debugging
+        export SAVE_CPP=1
     else
         # Store var in a temporary array to restore after we've finished parsing for builder-specific args
         POSITIONAL+=("$1")
     fi
-    shift
+    shift # past arg or value
+    [ "${DEBUG}" == "1" ] && echo "${@}"
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
+
+function build {
+	TARGET=${1}
+
+        # announce what we're going to build
+        echo "===== $UI $REV : ${NAME}${NAME_USERPART} ====="
+
+        # if saving the .cpp (for preprocessor debugging, etc) then render the filename for that
+        if [ "${SAVE_CPP}" == "1" ]
+        then
+            CPP_SAVE="${NAME}${NAME_USERPART}.cpp"
+        else
+            CPP_SAVE=""
+        fi
+
+        # try to compile, track result, and rename compiled files
+        if USER_DEFAULT_CFG="${USER_DEFAULT_CFG}" USER_MODEL_CFG="${USER_MODEL_CFG}" CPP_SAVE="${CPP_SAVE}" bin/build.sh "$TARGET" ; then
+
+            # if this is a build with user modifications, we need to name it as such. TODO: allow multiple model-specific custom builds
+            if [ -n "${USER_CFG_DIRNAME}" ]
+            then
+                HEX_USERPART="_${USER_CFG_DIRNAME}"
+            else
+                HEX_USERPART="" # noop
+            fi
+
+            HEX_OUT="hex/$UI.${NAME}${HEX_USERPART}.hex"
+            mv -f "ui/$UI/$UI".hex "$HEX_OUT"
+            MD5=$(md5sum "$HEX_OUT" | cut -d ' ' -f 1)
+            echo "  # $MD5"
+            echo "  > $HEX_OUT"
+            PASS=$((PASS + 1))
+            PASSED="$PASSED $NAME"
+        else
+            echo "ERROR: build failed"
+            FAIL=$((FAIL + 1))
+            FAILED="$FAILED $NAME"
+        fi
+}
+
+function search_build_targets {
+    # build targets are hw/$vendor/$model/**/$ui.h
+    for TARGET in hw/*/*/**/"$UI".h ; do
+
+        # friendly name for this build
+        NAME=$(echo "$TARGET" | perl -ne 's|/|-|g; /hw-(.*)-'"$UI"'.h/ && print "$1\n";')
+
+        # limit builds to searched patterns, if given
+        SKIP=0
+        if [ ${#SEARCH[@]} -gt 0 ]; then
+            for text in "${SEARCH[@]}" ; do
+                if ! echo "$NAME $TARGET" | grep -i -- "$text" > /dev/null ; then
+                    SKIP=1
+                fi
+            done
+        fi
+        if [ 1 = $SKIP ]; then continue ; fi
+
+        if [ ${#USER_CONFIGS[@]} -ne 0 ]; then
+            for USER_CFG in "${USER_CONFIGS[@]}"
+            do
+                [ -f "users/${USER_CFG}/${UI}.h" ] && export USER_DEFAULT_CFG="users/${USER_CFG}/${UI}.h"
+                # TODO: allow multiple custom model builds per user
+                [ -f "users/${USER_CFG}/model/${NAME}/${UI}.h" ] && export USER_MODEL_CFG="users/${USER_CFG}/model/${NAME}/${UI}.h"
+                # TODO: multiple user cfgs. possible implementations:
+                #    models/wurkkos-ts10/anduril_config1.h models/wurkkos-ts10/anduril_config2.h -> _user_config1 _user_config2 ?
+                #    or models/wurkkos-ts10/anduril/config1/anduril.h models/wurkkos-ts10/anduril/config2/anduril.h -> _user_config1 _user_config2 ?
+                #    second one looks nicer, I guess... either way, for now we only need the name part until this is implemented
+                NAME_USERPART="_${USER_CFG}"
+
+                if [ -z "${USER_DEFAULT_CFG}" ] && [ -z "${USER_MODEL_CFG}" ]
+                then
+                    echo -e "=====\nskipping $TARGET (no matching custom config for user ${USER_CFG})"
+                else
+                    build "${TARGET}"
+                fi
+            done
+            if [ -z "${SKIP_DEFAULT_BUILDS}" ]
+            then
+                unset USER_DEFAULT_CFG USER_MODEL_CFG
+                NAME_USERPART=""
+                build "${TARGET}"
+            fi
+        else
+            NAME_USERPART=""
+            build "${TARGET}"
+	fi
+    done
+}
 
 function main {
     if [ "$#" -gt 0 ]; then
@@ -51,6 +166,22 @@ function main {
         SEARCH=( "$@" )
         # memes
         [ "$1" = "me" ] && shift && shift && echo "Make your own $*." && exit 1
+    fi
+
+    # Get a default user config to use, if there is one and it isn't already overridden
+    if [ -f users.cfg ] && [ -z "${SKIP_USER_CFG_AUTOLOAD}" ] && [ "${#USER_CONFIGS[@]}" == 0 ]
+    then
+        echo "Reading custom users from users.cfg; to skip use --no-user" >&2
+        while read -r line
+        do
+            if [[ -d "users/${line}" ]]
+            then
+                USER_CONFIGS+=("${line}") # store user in an array to support multiple users
+                echo "Loaded user config dir ${line} from users.cfg" >&2
+            else
+                echo "Warning: user config dir ${line} not found" >&2
+            fi
+        done < users.cfg
     fi
 
     # TODO: detect UI from $0 and/or $*
@@ -65,87 +196,7 @@ function main {
     PASSED=''
     FAILED=''
 
-    # Get a default user config to use, if there is one and it isn't already overridden
-    if [ -f user.cfg ] && [ -z "${SKIP_USER_CFG}" ]
-    then
-        #TODO: Allow building user and base versions at the same time
-        USER_CFG_DIRNAME="$(<user.cfg)" && echo "Loaded default user config: ${USER_CFG_DIRNAME} from user.cfg. To skip user config, use --no-user" >&2
-        if [ -d "users/${USER_CFG_DIRNAME}" ]
-        then
-            export USER_CFG_DIR="users/${USER_CFG_DIRNAME}"
-        fi
-        unset USER_CFG_DIRNAME
-    fi
-
-    # load user global config, if any. Check directory users/username if --user was specified
-    if [ "$USER_CFG" == 1 ]
-    then
-        if [ -d "${USER_CFG_DIR}" ]
-        then
-            export USER_CFG_DIR="users/${USER_NAME}"
-        else
-	    echo "User config directory not found."
-	    exit;
-	fi
-    fi
-
-    # build targets are hw/$vendor/$model/**/$ui.h
-    for TARGET in hw/*/*/**/"$UI".h ; do
-
-        # friendly name for this build
-        NAME=$(echo "$TARGET" | perl -ne 's|/|-|g; /hw-(.*)-'"$UI"'.h/ && print "$1\n";')
-
-        # Get a default user config to use, if there is one and it isn't already overridden
-        if [ -f user.cfg ] && [ -z "${SKIP_USER_CFG}" ]
-        then
-            export USER_CFG_DIRNAME="$(<user.cfg)"
-            if [ -d "users/${USER_CFG_DIRNAME}" ]
-            then
-                export USER_CFG_DIR="users/${USER_CFG_DIRNAME}"
-	        #echo "Loaded user config dir ${USER_CFG_DIR} from user.cfg" >&2
-            fi
-        fi
-
-        export USER_DEFAULT_CFG="${USER_CFG_DIR}/${UI}.h"
-        # TODO: allow multiple custom model builds per user
-        export USER_MODEL_CFG="${USER_CFG_DIR}/model/${NAME}/${UI}.h"
-
-        # limit builds to searched patterns, if given
-        SKIP=0
-        if [ ${#SEARCH[@]} -gt 0 ]; then
-            for text in "${SEARCH[@]}" ; do
-                if ! echo "$NAME $TARGET" | grep -i -- "$text" > /dev/null ; then
-                    SKIP=1
-                fi
-            done
-        fi
-        if [ 1 = $SKIP ]; then continue ; fi
-
-        # announce what we're going to build
-        echo "===== $UI $REV : $NAME ====="
-
-        # try to compile, track result, and rename compiled files
-        if bin/build.sh "$TARGET" ; then
-            if [ ! -z "${USER_CFG_DIRNAME}" ]
-            then
-                HEX_USERPART="_${USER_CFG_DIRNAME}"
-            else
-                HEX_USERPART="" # noop
-            fi
-            HEX_OUT="hex/$UI.${NAME}${HEX_USERPART}.hex"
-            mv -f "ui/$UI/$UI".hex "$HEX_OUT"
-            MD5=$(md5sum "$HEX_OUT" | cut -d ' ' -f 1)
-            echo "  # $MD5"
-            echo "  > $HEX_OUT"
-            PASS=$((PASS + 1))
-            PASSED="$PASSED $NAME"
-        else
-            echo "ERROR: build failed"
-            FAIL=$((FAIL + 1))
-            FAILED="$FAILED $NAME"
-        fi
-
-    done
+    search_build_targets
 
     # summary
     echo "===== $PASS builds succeeded, $FAIL failed ====="
