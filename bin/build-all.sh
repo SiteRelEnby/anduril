@@ -89,11 +89,11 @@ function build {
         if USER_DEFAULT_CFG="${USER_DEFAULT_CFG}" USER_MODEL_CFG="${USER_MODEL_CFG}" CPP_SAVE="${CPP_SAVE}" bin/build.sh "$TARGET" ; then
 
             # if this is a build with user modifications, we need to name it as such. TODO: allow multiple model-specific custom builds
-            if [ -n "${USER_CFG_DIRNAME}" ]
+            if [ -z "${USER_DEFAULT_CFG}" ] && [ -z "${USER_MODEL_CFG}" ]
             then
-                HEX_USERPART="_${USER_CFG_DIRNAME}"
-            else
                 HEX_USERPART="" # noop
+            else
+                HEX_USERPART="_${USER_CFG}"
             fi
 
             HEX_OUT="hex/$UI.${NAME}${HEX_USERPART}.hex"
@@ -133,7 +133,7 @@ function search_build_targets {
             do
                 [ -f "users/${USER_CFG}/${UI}.h" ] && export USER_DEFAULT_CFG="users/${USER_CFG}/${UI}.h"
                 # TODO: allow multiple custom model builds per user
-                [ -f "users/${USER_CFG}/model/${NAME}/${UI}.h" ] && export USER_MODEL_CFG="users/${USER_CFG}/model/${NAME}/${UI}.h"
+                [ -f "users/${USER_CFG}/models/${NAME}/${UI}.h" ] && export USER_MODEL_CFG="users/${USER_CFG}/models/${NAME}/${UI}.h"
                 # TODO: multiple user cfgs. possible implementations:
                 #    models/wurkkos-ts10/anduril_config1.h models/wurkkos-ts10/anduril_config2.h -> _user_config1 _user_config2 ?
                 #    or models/wurkkos-ts10/anduril/config1/anduril.h models/wurkkos-ts10/anduril/config2/anduril.h -> _user_config1 _user_config2 ?
@@ -146,10 +146,10 @@ function search_build_targets {
                 else
                     build "${TARGET}"
                 fi
+                unset USER_DEFAULT_CFG USER_MODEL_CFG
             done
             if [ -z "${SKIP_DEFAULT_BUILDS}" ]
             then
-                unset USER_DEFAULT_CFG USER_MODEL_CFG
                 NAME_USERPART=""
                 build "${TARGET}"
             fi
@@ -172,7 +172,7 @@ function main {
     if [ -f users.cfg ] && [ -z "${SKIP_USER_CFG_AUTOLOAD}" ] && [ "${#USER_CONFIGS[@]}" == 0 ]
     then
         echo "Reading custom users from users.cfg; to skip use --no-user" >&2
-        while read -r line
+        while read -r line || [ -n "$line" ]
         do
             if [[ -d "users/${line}" ]]
             then

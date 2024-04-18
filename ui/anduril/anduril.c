@@ -54,7 +54,7 @@
 #endif
 
 // Per-user model-specific overrides
-#ifdef USER_MODEL_H
+#ifdef USER_MODEL_CFG
 #include incfile(USER_MODEL_CFG)
 #endif
 
