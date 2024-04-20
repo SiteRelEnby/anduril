@@ -41,9 +41,7 @@
 #define MIN_THERM_STEPDOWN 65  // lowest value it'll step down to
 #define THERM_FASTER_LEVEL 130
 
-#ifndef BLINK_AT_RAMP_CEIL
-#define BLINK_AT_RAMP_CEIL
-#endif
+#undef BLINK_AT_RAMP_CEIL
 
 // don't do this
 #undef BLINK_AT_RAMP_MIDDLE

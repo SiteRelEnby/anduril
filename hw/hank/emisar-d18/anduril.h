@@ -40,7 +40,7 @@
 // only blink at max regulated level and ceiling
 //#define BLINK_AT_RAMP_MIDDLE
 //#define BLINK_AT_RAMP_MIDDLE_1 MAX_Nx7135
-#define BLINK_AT_RAMP_CEIL
+#undef BLINK_AT_RAMP_CEIL
 #ifdef BLINK_AT_RAMP_MIDDLE
 #undef BLINK_AT_RAMP_MIDDLE
 #endif

@@ -37,7 +37,7 @@
 #define THERM_FASTER_LEVEL MAX_Nx7135
 
 // don't blink during ramp
-#define BLINK_AT_RAMP_CEIL
+#undef BLINK_AT_RAMP_CEIL
 #undef BLINK_AT_RAMP_MIDDLE
 #undef BLINK_AT_RAMP_FLOOR
 

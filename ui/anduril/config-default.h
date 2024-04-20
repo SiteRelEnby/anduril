@@ -74,7 +74,7 @@
 // short blips while ramping
 #define BLINK_AT_RAMP_MIDDLE
 //#define BLINK_AT_RAMP_FLOOR
-#define BLINK_AT_RAMP_CEIL
+#undef BLINK_AT_RAMP_CEIL
 //#define BLINK_AT_STEPS  // whenever a discrete ramp mode is passed in smooth mode
 
 // Uncomment for Anduril1 "Ramp 2C" behavior:
@@ -178,7 +178,7 @@
 #define USE_AUTOLOCK
 
 // enable momentary mode
-#define USE_MOMENTARY_MODE
+//#define USE_MOMENTARY_MODE
 
 // enable tactical mode
 #define USE_TACTICAL_MODE

@@ -46,7 +46,7 @@
 #define THERM_HARD_TURBO_DROP  // this light is massively overpowered
 
 // don't blink during ramp, it's irrelevant and annoying on this light
-#define BLINK_AT_RAMP_CEIL
+#undef BLINK_AT_RAMP_CEIL
 #undef BLINK_AT_RAMP_MIDDLE
 #undef BLINK_AT_RAMP_FLOOR
 

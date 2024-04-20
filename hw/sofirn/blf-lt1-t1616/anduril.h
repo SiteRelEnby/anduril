@@ -63,9 +63,6 @@
 // Allow 3C (or 6C) in Simple UI (toggle smooth or stepped ramping)
 #define USE_SIMPLE_UI_RAMPING_TOGGLE
 
-// allow Aux Config and Strobe Modes in Simple UI
-#define USE_EXTENDED_SIMPLE_UI
-
 #define USE_SOS_MODE
 #define USE_SOS_MODE_IN_BLINKY_GROUP
 
@@ -99,8 +96,7 @@
 #undef BLINK_AT_RAMP_MIDDLE
 #endif
 // except the top... blink at the top
-#ifndef BLINK_AT_RAMP_CEIL
-#define BLINK_AT_RAMP_CEIL
+#undef BLINK_AT_RAMP_CEIL
 #endif
 
 // for consistency with other models

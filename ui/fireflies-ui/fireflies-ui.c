@@ -35,7 +35,7 @@
 // short blips while ramping
 #define BLINK_AT_RAMP_MIDDLE
 //#define BLINK_AT_RAMP_FLOOR
-#define BLINK_AT_RAMP_CEILING
+#undef BLINK_AT_RAMP_CEILING
 //#define BLINK_AT_STEPS  // whenever a discrete ramp mode is passed in smooth mode
 
 // ramp down via regular button hold if a ramp-up ended <1s ago

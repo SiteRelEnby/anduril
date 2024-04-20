@@ -85,9 +85,6 @@
 // Allow 3C (or 6C) in Simple UI (toggle smooth or stepped ramping)
 #define USE_SIMPLE_UI_RAMPING_TOGGLE
 
-// allow Aux Config and Strobe Modes in Simple UI
-//#define USE_EXTENDED_SIMPLE_UI
-
 // turn on at med-low brightness by default (level 50/150, or ramp step 3/7)
 // (also sets lockout mode 2H to a useful level)
 //#define DEFAULT_MANUAL_MEMORY 50
@@ -118,6 +115,6 @@
 #undef BLINK_AT_RAMP_CEIL
 #endif
 // without this, it's really hard to tell when ramping up stops
-#define BLINK_AT_RAMP_CEIL
+#undef BLINK_AT_RAMP_CEIL
 
 #define USE_SOFT_FACTORY_RESET

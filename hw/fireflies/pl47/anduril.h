@@ -63,9 +63,7 @@
 // regulate down faster when the FET is active, slower otherwise
 #define THERM_FASTER_LEVEL 135  // throttle back faster when high
 
-#ifndef BLINK_AT_RAMP_CEIL
-#define BLINK_AT_RAMP_CEIL
-#endif
+#undef BLINK_AT_RAMP_CEIL
 
 // don't do this
 #undef BLINK_AT_RAMP_MIDDLE
