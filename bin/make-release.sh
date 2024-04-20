@@ -40,6 +40,12 @@ cp -a \
     docs/which-hex-file.md \
     "$RELDIR"
 
+# add hardware-specific docs
+for f in $(find hw -name '*.md') ; do
+    d=$(echo "$f" | sed 's/^hw.//; s|/readme||i; s/^/readme./; s|/|-|g;')
+    cp -a "$f" "$RELDIR/$d"
+done
+
 # add the .hex files
 rename -f 's|hex/anduril.|'"$RELDIR/hex/$RELNAME"'.|;' hex/*.hex
 
