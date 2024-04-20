@@ -11,7 +11,7 @@
 #include "loneoceans/lume1-6af/anduril.h"
 
 #undef DEFAULT_THERM_CEIL
-#define DEFAULT_THERM_CEIL 60
+#define DEFAULT_THERM_CEIL 55
 
 #undef RAMP_SMOOTH_FLOOR
 #define RAMP_SMOOTH_FLOOR 9

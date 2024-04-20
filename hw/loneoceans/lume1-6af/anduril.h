@@ -107,7 +107,7 @@
 #define THERM_FASTER_LEVEL 125          // About 8-9W
 #define MIN_THERM_STEPDOWN 88           // About 2.2W
 #define THERM_NEXT_WARNING_THRESHOLD 28 // 24 by default -> increase for fewer adjustments (more stable output on large time scale)
-#define THERM_RESPONSE_MAGNITUDE 32     // 64 by default -> decrease for smaller adjustments (removes dip post turbo)
+#define THERM_RESPONSE_MAGNITUDE 60     // 64 by default -> decrease for smaller adjustments (removes dip post turbo)
 //#define THERM_WINDOW_SIZE 1           // 2 by default -> decrease for tighter temperature regulation
 //#define THERM_LOOKAHEAD 4             // 4 by default -> decrease for longer turbo
 
