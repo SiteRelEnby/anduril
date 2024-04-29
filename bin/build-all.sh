@@ -14,6 +14,36 @@ if [ "${DEBUG}" == "1" ]; then
   export DEBUG
 fi
 
+# trap ^C to show the build summary on aborted builds, if we got that far
+function ctrlc(){
+    # output the build summary if the build was cancelled but a build was attempted beforehand
+    if [ "$PASS" -gt 0 ] || [ "$FAIL" -gt 0 ]
+    then
+        echo #push a new line below the ^C char for neatness
+        build_summary
+        exit 1
+    else
+        exit 1
+    fi
+}
+
+trap ctrlc INT
+
+function build_help(){
+    cat << ENDOFHELP
+
+Advanced build options:
+  --build-help    Show this help text
+  --user USER     Load user's custom configuration from users/USER
+  --no-user       Do not load any custom user configuration; build default targets only
+  --debug         Enable script debug output
+  --save-cpp      Save the intermediate .cpp source file (usually for debugging preprocessor macros)
+  --show-passed   Output a list of successful builds, in addition to any failed
+
+ENDOFHELP
+    exit 2
+}
+
 USER_CONFIGS=()
 POSITIONAL=()
 while [ "${#}" -gt "0" ]
@@ -62,6 +92,13 @@ do
     then
         # save the rendered .cpp, e.g. for preprocessor debugging
         export SAVE_CPP=1
+    elif [[ "${1}" == "--show-passed" ]]
+    then
+        #enable output of list of passed builds
+        export SHOW_PASSED=1
+    elif [[ "${1}" == "--build-help" ]]
+    then
+        build_help
     else
         # Store var in a temporary array to restore after we've finished parsing for builder-specific args
         POSITIONAL+=("$1")
@@ -115,13 +152,13 @@ function search_build_targets {
     for TARGET in hw/*/*/**/"$UI".h ; do
 
         # friendly name for this build
-        NAME=$(echo "$TARGET" | perl -ne 's|/|-|g; /hw-(.*)-'"$UI"'.h/ && print "$1\n";')
+        NAME=$(perl -ne 's|/|-|g; /hw-(.*)-'"$UI"'.h/ && print "$1\n";' <<< "$TARGET")
 
         # limit builds to searched patterns, if given
         SKIP=0
         if [ ${#SEARCH[@]} -gt 0 ]; then
             for text in "${SEARCH[@]}" ; do
-                if ! echo "$NAME $TARGET" | grep -i -- "$text" > /dev/null ; then
+                if ! grep -i -- "$text" <<< "$NAME $TARGET" > /dev/null ; then
                     SKIP=1
                 fi
             done
@@ -198,11 +235,15 @@ function main {
 
     search_build_targets
 
+    build_summary
+}
+
+function build_summary(){
     # summary
     echo "===== $PASS builds succeeded, $FAIL failed ====="
-    #echo "PASS: $PASSED"
+    [ -n "${SHOW_PASSED}" ] && echo "PASS: $PASSED"
     if [ 0 != $FAIL ]; then
-        echo "FAIL:$FAILED"
+        echo "FAIL: $FAILED"
         exit 1
     fi
 }
