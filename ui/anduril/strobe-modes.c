@@ -66,7 +66,10 @@ uint8_t strobe_state(Event event, uint16_t arg) {
               do {
                   count ++; //e.g. 1
                   next_ch = ((next_ch + 1) % NUM_CHANNEL_MODES);
-                  if (!channel_uses_aux(next_ch)) break;
+                  #ifdef USE_CHANNEL_USES_AUX // this bugfix is not available without this feature (probably only on t85 without RGB, where it matters less)
+                      //TODO: do something else here to get the same effect, maybe using NUM_CHANNEL_MODES?
+                      if (!channel_uses_aux(next_ch)) break;
+                  #endif
               } while (count < NUM_CHANNEL_MODES);
           } else {
               next_ch = ((channel_mode + 1) % NUM_CHANNEL_MODES);
