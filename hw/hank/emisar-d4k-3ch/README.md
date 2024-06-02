@@ -26,7 +26,10 @@ AKA `CM_ALL`. On both wiring patterns, this is all three main channels with an e
 AKA `CM_BLEND34A`. Ramping mode between two channels - on the standard wiring pattern, this is the 3rd and 4th LEDs (channels 2 and 3).  On the alternate wiring pattern, this is the 4th and main two LEDs (channels 1 and 4).
 
 ### Channel 1+2
-AKA `CM_BLEND34B`. Ramping mode between two channels - on the standard wiring pattern, this is the main two and 3rd LEDs (channels 1 and 2).  On the alternate wiring pattern, this is the 3rd and 4th LEDs (channels 2 and 3).
+AKA `CM_BLEND34B`. Ramping mode between two channels - on the standard wiring pattern, this is the main two and 3rd LEDs (channels 1 and 2). On the alternate wiring pattern, this is the 3rd and 4th LEDs (channels 2 and 3).
+
+### Channel 1+4
+AKA `CM_BLEND14`. Ramping mode between two channels - on the standard wiring pattern, this is the main two and 4th LEDs (channels 1 and 3). On the alternate wiring pattern, this is the same LED pair, but with a reversed initial ramp direction.
 
 ### HSV
 AKA `CM_HSV`. Circular ramp between all three channels.
