@@ -27,6 +27,7 @@ Usage: ./make TASK
   docs            Convert all .md files to .html
   models          Generate the MODELS file
   release         Zip up all .hex files to prep for publishing a release
+  version         Show the current version string
   todo            Show tasks noted in source code files
 
 ... or TASK can be the partial name of a build target.
@@ -73,7 +74,10 @@ function main() {
       cat MODELS
       ;;
     release)
-      echo "Not implemented yet."
+      ./bin/make-release.sh "$@"
+      ;;
+    version)
+      ./bin/version-string.sh "$@"
       ;;
     todo)
       grep -E 'TODO:|FIXME:' -- **/*.[ch] **/*.md
