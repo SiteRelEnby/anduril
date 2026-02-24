@@ -94,6 +94,7 @@ uint8_t voltage_to_rgb() {
 // arg: time slice number
 void rgb_led_update(uint8_t mode, uint16_t arg) {
     static uint8_t rainbow = 0;  // track state of rainbow mode
+    static uint8_t rgbonly = 0;  // track state of RGB-only rainbow mode (0/1/2 → R/G/B)
     static uint8_t frame = 0;  // track state of animation mode
 
     // turn off aux LEDs when battery is empty
@@ -151,13 +152,13 @@ void rgb_led_update(uint8_t mode, uint16_t arg) {
         rainbow = (rainbow + 1 + pseudo_rand() % 5) % 6;
         actual_color = pgm_read_byte(colors + rainbow);
     }
-    else if (color == 8) {  // rainbow
+    else if (color == 8) {  // rainbow (RGB-only: red, green, blue; no mixed colors)
         uint8_t speed = 0x03;  // awake speed
         if (go_to_standby) speed = RGB_RAINBOW_SPEED;  // asleep speed
         if (0 == (arg & speed)) {
-            rainbow = (rainbow + 1) % 6;
+            rgbonly = (rgbonly + 1) % 3;
         }
-        actual_color = pgm_read_byte(colors + rainbow);
+        actual_color = pgm_read_byte(colors + (rgbonly * 2));  // 0→R, 2→G, 4→B
     }
     else {  // voltage
         // show actual voltage while asleep...
